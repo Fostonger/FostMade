@@ -63,16 +63,27 @@ void* f_free(void* ptr) {
     return NULL;
 }
 
-int main()
-{
-    int* a = (int*)f_malloc(4);
+void test(){
+    int* a = (int*)f_malloc(sizeof(int));
     *a = 1;
-    int* b = (int*)f_malloc(4);
-    *b = 2;
     std::cout << "a adress is " << a << " value is " << *a << "\n";
-    f_free(a);
-    int* c = (int*)f_malloc(4);
+           
+    int* b = (int*)f_malloc(sizeof(int));
+    *b = 2;
+    std::cout << "b adress is " << b << " value is " << *b << "\n";
+       
+    int* c = (int*)f_malloc(sizeof(int));
     *c = 3;
     std::cout << "c adress is " << c << " value is " << *c << "\n";
+       
+    f_free(a);
+    f_free(b);
+    f_free(c);
+            
+}
+
+int main()
+{
+    test();
     std::cin.get();
 }
