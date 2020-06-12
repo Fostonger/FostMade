@@ -1,89 +1,90 @@
 ﻿#include <iostream>
 
-#define META_SIZE sizeof(struct block_meta)
+#define META_SIZE sizeof(class Entity)
 
-struct block_meta {
+struct Entity {
+    Entity* next_entity;
     size_t size;
-    struct block_meta* next_block;
     int free;
 };
 
-block_meta* global_base = NULL;
+class VirtualMemory {
+public:
+    void* first_element; // указатель на первый элемент в памяти
+    VirtualMemory* next_memory; // указатель на сдедующую память
 
-block_meta* find_free_block(block_meta** last, size_t size) {
-    block_meta* current = global_base;
-    while (current && !(current->free && current->size >= size)) {
-        *last = current;
-        current = current->next_block;
+    VirtualMemory() {
+        first_element = new char[size]; //бронируем 4 кб конструктором на хипе
     }
-    return current;
+
+    void* get_memory(size_t size) {
+        Entity* free_entity = (Entity*)first_element;
+        Entity* last = NULL;
+        while (free_entity && !free_entity->free && free_entity->size <= size ) {
+            last = free_entity;
+            free_entity = free_entity->next_entity;
+        }
+        if (!free_entity) {
+            free_entity = (Entity*)((char*)last + last->size) + 1;
+            last->next_entity = free_entity;
+        }
+        return free_entity;
+    }
+
+private:
+    size_t size = 4096; // будем выделять сразу 4 килобайта, с ними танцуем
 };
 
-block_meta* get_more_memory(block_meta* last, size_t size) {
-    block_meta* new_memory = (block_meta*)new char[size + META_SIZE];
-    if (last) {
-        last->next_block = new_memory;
-    }
-    new_memory->next_block = NULL;
-    new_memory->size = size;
-    new_memory->free = 0;
-    return new_memory;
-};
+VirtualMemory* global_base = new VirtualMemory;
 
 void* f_malloc(size_t size) {
-    if (size <= 0)
-        return NULL;
-    struct block_meta* block;
-    block_meta* last = global_base;
-    if (!global_base) {
-        block = get_more_memory(NULL, size);
-        if (!block)
-            return NULL;
-        global_base = block;
-    }
-    else {
-        block = find_free_block(&last, size);
-        if (!block) {
-            block = get_more_memory(last, size);
+    VirtualMemory* vm = global_base;
+    Entity* new_memory = (Entity*)vm->get_memory(size + META_SIZE);
+    new_memory->free = 0;
+    new_memory->size = size;
+    new_memory->next_entity = NULL;
+    return new_memory + 1; // даем указатель, отступив немного для хедера
+}
+void f_free(void* ptr) {
+    Entity* ptr_head = (Entity*)ptr - 1;
+    ptr_head->free = 1;
+    //начинаем дефрагментировать
+    VirtualMemory* vm = global_base;
+    Entity* current_entity = (Entity*)global_base->first_element; //начинаем с первого элемента
+    Entity* last_entity = NULL;
+    while (current_entity) {
+        if (!last_entity){
+            last_entity = current_entity;
+            current_entity = current_entity->next_entity;
+            continue; // перепрыгиваем если первый элемент
         }
-        block->free = 0;
+        if (current_entity->free && last_entity->free) {
+            last_entity->next_entity = current_entity->next_entity; // объединяем два блока
+            last_entity->size += current_entity->size + META_SIZE; // если оба свободны
+        }
+        else if (current_entity->free) {
+            // если прошлый занят, может быть что он занял немного больше чем надо.
+            // тогда перемещаем поинтер туда, где кончается используемая память у прошлого
+            Entity* resized_ptr = (Entity*)((char*)last_entity + META_SIZE + last_entity->size);
+            resized_ptr->next_entity = current_entity->next_entity;
+            resized_ptr->size = current_entity->size + (char*)current_entity - (char*)resized_ptr;
+        }
+        last_entity = current_entity;
+        current_entity = current_entity->next_entity;
     }
-    return block + 1;
 }
 
-block_meta* get_block_pointer(void* ptr) {
-    return (block_meta*)ptr - 1;
-}
-
-void* f_free(void* ptr) {
-    if (!ptr)
-        return NULL;
-    block_meta* block_ptr = get_block_pointer(ptr);
-    block_ptr->free = 1;
-    return NULL;
-}
-
-void test(){
-    int* a = (int*)f_malloc(sizeof(int));
+int main() {
+    int* a =(int*) f_malloc(6);
     *a = 1;
-    std::cout << "a adress is " << a << " value is " << *a << "\n";
-           
-    int* b = (int*)f_malloc(sizeof(int));
+    int* b = (int*)f_malloc(4);
     *b = 2;
-    std::cout << "b adress is " << b << " value is " << *b << "\n";
-       
-    int* c = (int*)f_malloc(sizeof(int));
-    *c = 3;
-    std::cout << "c adress is " << c << " value is " << *c << "\n";
-       
     f_free(a);
+    int* c = (int*)f_malloc(4);
+    *c = 3;
     f_free(b);
-    f_free(c);
-            
-}
-
-int main()
-{
-    test();
+    int* d = (int*)f_malloc(4);
+    *d = 4;
+    
     std::cin.get();
 }

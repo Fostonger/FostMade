@@ -1,2 +1,8 @@
 ﻿  f_malloc.cpp
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(42,57): warning C4099: Entity: имя типа, ранее отображенное с помощью "struct", теперь отображено с помощью "class"
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(5): message : см. объявление "Entity"
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(63,57): warning C4099: Entity: имя типа, ранее отображенное с помощью "struct", теперь отображено с помощью "class"
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(5): message : см. объявление "Entity"
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(68,66): warning C4099: Entity: имя типа, ранее отображенное с помощью "struct", теперь отображено с помощью "class"
+\\Mac\Home\Downloads\GitHub\FostMade\f_malloc\f_malloc\f_malloc.cpp(5): message : см. объявление "Entity"
   f_malloc.vcxproj -> \\Mac\Home\Downloads\GitHub\FostMade\f_malloc\Debug\f_malloc.exe
